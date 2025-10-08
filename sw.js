@@ -1,11 +1,11 @@
-// Service Worker V18
-const CACHE = 'mpc-cache-v18';
+// Service Worker V21
+const CACHE = 'mpc-cache-v21';
 const ASSETS = [
   './',
   './index.html',
-  './style.css?v=18',
-  './app.js?v=18',
-  './manifest.json?v=18',
+  './style.css?v=21',
+  './app.js?v=21',
+  './manifest.json?v=21',
   './icons/icon-192.png',
   './icons/icon-512.png'
 ];
