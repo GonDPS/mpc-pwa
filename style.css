@@ -90,9 +90,15 @@ button.small{ padding:6px 10px; font-size:.9rem; }
 #detail.hidden{ display:none !important; }
 
 /* Acciones en detalle */
-#detail .actions{
-  position:absolute; top: var(--action-gap); left: var(--action-gap); right: var(--action-gap);
-  display:flex; justify-content:space-between; align-items:flex-start; pointer-events:none;
+#detail .actions {
+  position: absolute;
+  top: calc(var(--action-gap) + env(safe-area-inset-top, 0px)); /* 👈 aquí */
+  left: var(--action-gap);
+  right: var(--action-gap);
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  pointer-events: none;
 }
 #detail .left-actions{ display:flex; flex-direction:column; gap: var(--action-gap); pointer-events:none; }
 #detail .right-actions{ pointer-events:none; }
