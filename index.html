@@ -6,36 +6,33 @@
   <meta name="theme-color" content="#000000">
   <title>My Personal Counter</title>
 
-  <!-- Manifest + PWA -->
-  <link rel="manifest" href="manifest.json?v=11">
+  <!-- PWA -->
+  <link rel="manifest" href="manifest.json?v=16">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
-  <!-- iOS: modo app a pantalla completa -->
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="MPC">
 
-  <link rel="stylesheet" href="style.css?v=10">
-  <style>
-    /* Quitar header: el lienzo ocupa todo */
-    html, body { height: 100%; margin: 0; background:#000; }
-    main#board { min-height: 100vh; padding: env(safe-area-inset-top) 8px env(safe-area-inset-bottom) 8px; }
-    /* Banner “instalar” sólo si no está en standalone */
-    #a2hs {
-      position: fixed; left: 12px; right: 12px; bottom: calc(12px + env(safe-area-inset-bottom));
-      background: rgba(20,20,20,.9); color:#fff; border-radius: 12px; padding: 10px 12px; 
-      display: none; z-index: 9999; backdrop-filter: blur(6px);
-      font: 600 14px system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-    }
-    #a2hs button { margin-left: 10px; border:0; border-radius:10px; padding:8px 12px; font-weight:800; }
-    #a2hs .ghost{ background:#fff; color:#111; }
-  </style>
+  <!-- CSS con versión nueva -->
+  <link id="main-css" rel="stylesheet" href="./style.css?v=16">
+  <script>
+    // Aviso si el CSS no cargó en 3s (para detectar SW/caché)
+    setTimeout(() => {
+      const css = document.getElementById('main-css');
+      const loaded = [...document.styleSheets].some(s => (s.href||'').includes('style.css?v=16'));
+      if (!loaded) {
+        alert('No se pudo cargar el CSS. Prueba recargar sin caché o borra datos del sitio.');
+      }
+    }, 3000);
+  </script>
 </head>
+
 <body>
-  <!-- VISTA GENERAL a pantalla completa -->
+  <!-- Vista general -->
   <main id="board" aria-live="polite"></main>
   <button id="fab" aria-label="Añadir contador">+</button>
 
-  <!-- MODAL CREAR -->
+  <!-- Modal crear -->
   <div id="modal" class="hidden" role="dialog" aria-modal="true">
     <div class="panel">
       <h2>Nueva sección</h2>
@@ -52,7 +49,7 @@
     </div>
   </div>
 
-  <!-- MODAL INFO -->
+  <!-- Modal info -->
   <div id="infoModal" class="hidden" role="dialog" aria-modal="true">
     <div class="panel">
       <div class="panel-head">
@@ -63,7 +60,7 @@
     </div>
   </div>
 
-  <!-- DETALLE A PANTALLA COMPLETA -->
+  <!-- Detalle full-screen -->
   <div id="detail" class="hidden" role="dialog" aria-modal="true">
     <div id="detailActions" class="actions">
       <div class="left-actions">
@@ -86,50 +83,16 @@
     </div>
   </div>
 
-  <!-- Banner “Añadir a la pantalla de inicio” -->
-  <div id="a2hs">
-    Instálala para usarla a pantalla completa.
-    <button id="a2hsInstall" class="ghost">Instalar</button>
-  </div>
-
-  <script src="app.js?v=10" defer></script>
+  <!-- JS con versión nueva -->
+  <script src="./app.js?v=16" defer></script>
   <script>
-    // Registrar SW
+    // Registrar SW con versión nueva
     window.addEventListener('load', () => {
       if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('./sw.js?v=11').catch(()=>{});
+        navigator.serviceWorker.register('./sw.js?v=16')
+          .catch(()=>{});
       }
     });
-
-    // Detectar modo standalone (iOS y Android)
-    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
-    const a2hs = document.getElementById('a2hs');
-    const btnInstall = document.getElementById('a2hsInstall');
-    let deferredPrompt = null;
-
-    // Android: capturar beforeinstallprompt
-    window.addEventListener('beforeinstallprompt', (e) => {
-      e.preventDefault();
-      deferredPrompt = e;
-      if (!isStandalone) a2hs.style.display = 'block';
-    });
-
-    btnInstall.addEventListener('click', async () => {
-      if (deferredPrompt) {
-        deferredPrompt.prompt();
-        await deferredPrompt.userChoice;
-        deferredPrompt = null;
-      } else {
-        // iOS: guía rápida
-        alert('En iPhone: toca el botón Compartir ▸ “Añadir a pantalla de inicio”.');
-      }
-      a2hs.style.display = 'none';
-    });
-
-    // iOS Safari (no dispara beforeinstallprompt)
-    if (!isStandalone && /iphone|ipad|ipod/i.test(navigator.userAgent)) {
-      a2hs.style.display = 'block';
-    }
   </script>
 </body>
 </html>
