@@ -274,7 +274,13 @@ function doUndo(it){
   const s = it.lastChange;
   it.count=s.count; it.monthStat=s.monthStat; it.yearStat=s.yearStat;
   it.historyMonthly=s.historyMonthly; it.historyYearly=s.historyYearly;
-  it.lastChange=null; save(); renderDetail();
+  it.lastChange=null;
+  save();
+
+  // 👇 Nueva lógica
+  mode = 'overview';
+  renderOverview();
+}
 }
 function doRename(it){
   const nuevo = prompt('Nuevo nombre:', it.name);
