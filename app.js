@@ -1,5 +1,6 @@
-// My Personal Counter – V17
+// My Personal Counter – V18
 // Overview: SOLO tarjetas (nombre + total). Detalle: pantalla completa con botones.
+// FAB robusto: onclick en HTML + listeners click/touch + delegación global.
 
 const KEY = 'mpc.items.v4';
 let items = [];
@@ -38,7 +39,7 @@ function ensureContrast(fgHex,bgHex,min=3.5){
 }
 const PALETTE = ['#9fb4ff','#ffd166','#06d6a0','#ef476f','#ffe9a8','#a0e7e5','#bdb2ff','#ffc6ff','#ffd6a5','#caffbf'];
 function nextColor(){
-  const used = items.map(i => i.color.toLowerCase());
+  const used = items.map(i => (i.color || '').toLowerCase());
   for (const c of PALETTE) if (!used.includes(c)) return c;
   // generar HSL separado de los usados
   const usedH = used.map(c => rgbToHsl(hexToRgb(c)).h);
@@ -109,10 +110,15 @@ function bindUI(){
   detailYear = document.getElementById('detailYear');
   detailCreated = document.getElementById('detailCreated');
 
-  // FAB robusto (click + touch)
-  function onFab(e){ if(e){e.preventDefault();e.stopPropagation();} openModal(); }
-  fab.addEventListener('click', onFab, {passive:false});
-  fab.addEventListener('touchend', onFab, {passive:false});
+  // FAB: 3 eventos + delegación + fallback onclick en HTML
+  const onFab = (e)=>{ if(e){e.preventDefault(); e.stopPropagation();} openModal(); };
+  ['click','touchstart','touchend'].forEach(type=>{
+    fab.addEventListener(type, onFab, {passive:false});
+  });
+  document.addEventListener('click', (e)=>{
+    const t = e.target;
+    if (t && (t.id === 'fab' || (t.closest && t.closest('#fab')))) onFab(e);
+  }, {capture:true});
 
   cancelBtn.onclick = closeModal;
   addBtn.onclick    = onAdd;
@@ -124,9 +130,9 @@ function bindUI(){
 
 /* ---------- Crear nuevo ---------- */
 function openModal(){
-  colorInput.value = nextColor();
+  try { colorInput.value = nextColor(); } catch {}
   modal.classList.remove('hidden');
-  setTimeout(()=> nameInput.focus(), 50);
+  setTimeout(()=> nameInput?.focus(), 50);
 }
 function closeModal(){ modal.classList.add('hidden'); nameInput.value=''; }
 
@@ -152,7 +158,6 @@ function onAdd(){
 function layout(){ (mode === 'overview') ? renderOverview() : renderDetail(); }
 
 function renderOverview(){
-  // Oculta detalle por si quedara visible
   if (detail) detail.classList.add('hidden');
   fab.style.display = 'block';
 
@@ -165,7 +170,7 @@ function renderOverview(){
   const arr = [...items].sort((a,b)=>b.count - a.count);
   if (arr.length === 0) return;
 
-  // columnas responsivas con ancho mínimo
+  // columnas responsivas con ancho mínimo para evitar columnas finas
   const minW = 300;
   let cols = Math.floor(W / (minW + pad));
   cols = Math.max(1, Math.min(3, cols || 1));
@@ -206,7 +211,7 @@ function renderDetail(){
   const it = current;
   ensurePeriods(it);
 
-  // fondo y colores de iconos
+  // fondo e iconos
   detail.style.background = it.color;
   const iconColor = ensureContrast(dimColor(it.color, 0.25), '#ffffff', 4.0);
   detailActions.style.setProperty('--icon-color', iconColor);
@@ -281,7 +286,6 @@ function doDelete(it){
 }
 
 /* ---------- Info ---------- */
-let infoModal, infoTitle, infoBody, infoClose; // ya referenciados arriba
 function openInfo(it){
   infoTitle.textContent = it.name;
   const months = Object.entries(it.historyMonthly||{})
