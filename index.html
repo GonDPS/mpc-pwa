@@ -13,7 +13,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
   <!-- Styles -->
-  <link rel="stylesheet" href="style.css?v=8">
+  <link rel="stylesheet" href="style.css?v=9">
 </head>
 
 <body>
@@ -21,9 +21,10 @@
 
   <main id="board" aria-live="polite"></main>
 
+  <!-- Botón flotante para añadir -->
   <button id="fab" aria-label="Añadir contador">+</button>
 
-  <!-- Modal de añadir -->
+  <!-- Modal de creación de nueva sección -->
   <div id="modal" class="hidden" role="dialog" aria-modal="true">
     <div class="panel">
       <h2>Nueva sección</h2>
@@ -52,11 +53,12 @@
   </div>
 
   <!-- Scripts -->
-  <script src="app.js?v=8" defer></script>
+  <script src="app.js?v=9" defer></script>
   <script>
+    // Registro del Service Worker
     window.addEventListener('load', () => {
       if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('./sw.js?v=8')
+        navigator.serviceWorker.register('./sw.js?v=9')
           .then(() => console.log('Service Worker registrado ✅'))
           .catch(err => console.warn('SW error:', err));
       }
