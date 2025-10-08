@@ -56,7 +56,7 @@ function ensurePeriods(it) {
 const monthName = (y,m) =>
   new Intl.DateTimeFormat('es-ES', { month: 'long' }).format(new Date(y, m, 1));
 
-// Color helpers for dimming
+// Color helpers
 function hexToRgb(hex){ let s=hex.trim(); if(s.startsWith('#')) s=s.slice(1);
   if(s.length===3) s=s.split('').map(x=>x+x).join('');
   const n=parseInt(s,16); return {r:(n>>16)&255,g:(n>>8)&255,b:n&255}; }
@@ -117,7 +117,7 @@ function layout(){
       save(); layout();
     }, {passive:true});
 
-    // Botón RESET
+    // RESET
     el.querySelector('.reset').addEventListener('click', (ev)=>{
       ev.stopPropagation();
       const ok = confirm(`Resetear "${it.name}"?`);
@@ -130,7 +130,7 @@ function layout(){
       save(); layout();
     });
 
-    // Botón UNDO
+    // UNDO
     el.querySelector('.undo').addEventListener('click', (ev)=>{
       ev.stopPropagation();
       if (!it.lastChange) return alert('Nada que deshacer.');
@@ -144,61 +144,4 @@ function layout(){
     board.appendChild(el);
   };
 
-  const W = w - pad*2;
-  const H = h - pad*2;
-  const X0 = pad, Y0 = pad;
-  if (arr.length === 0) return;
-
-  if (arr.length === 1){
-    place(arr[0], X0, Y0, W, H);
-  } else if (arr.length === 2){
-    const wHalf = (W - pad)/2;
-    place(arr[0], X0, Y0, wHalf, H);
-    place(arr[1], X0 + wHalf + pad, Y0, wHalf, H);
-  } else if (arr.length === 3){
-    const topH = (H - pad) * 0.45;
-    const botH = H - pad - topH;
-    const wHalf = (W - pad)/2;
-    place(arr[1], X0, Y0, wHalf, topH);
-    place(arr[2], X0 + wHalf + pad, Y0, wHalf, topH);
-    place(arr[0], X0, Y0 + topH + pad, W, botH);
-  } else {
-    const minW = 140, minH = 160;
-    const cols = Math.max(2, Math.floor(W / (minW + pad)));
-    const rows = Math.ceil(arr.length / cols);
-    const cellW = (W - pad*(cols-1)) / cols;
-    const cellH = Math.max(minH, (H - pad*(rows-1)) / rows);
-
-    arr.forEach((it, i) => {
-      const r = Math.floor(i / cols);
-      const c = i % cols;
-      const x = X0 + c*(cellW + pad);
-      const y = Y0 + r*(cellH + pad);
-      place(it, x, y, cellW, cellH);
-    });
-  }
-}
-
-// --- Add flow ---
-function openModal(){ modal.classList.remove('hidden'); setTimeout(()=> nameInput.focus(), 50); }
-function closeModal(){ modal.classList.add('hidden'); nameInput.value=''; colorInput.value='#9fb4ff'; }
-fab.addEventListener('click', openModal);
-cancelBtn.addEventListener('click', closeModal);
-addBtn.addEventListener('click', ()=>{
-  const {y,m,d} = nowParts();
-  const name = (nameInput.value || 'Contador').trim();
-  const color = colorInput.value || '#9fb4ff';
-  items.push({
-    id: uid(),
-    name, color,
-    createdAt: d.toISOString(),
-    count: 0, lastChange:null,
-    monthStat: { year: y, month: m, count: 0 },
-    yearStat:  { year: y, count: 0 }
-  });
-  save(); closeModal(); layout();
-});
-
-window.addEventListener('resize', ()=> layout());
-window.addEventListener('orientationchange', ()=> setTimeout(layout, 100));
-layout();
+  const W = w - pa
