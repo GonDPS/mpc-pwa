@@ -9,9 +9,7 @@
   <link rel="apple-touch-icon" href="icons/icon-192.png">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-
-  <!-- versionado para romper caché -->
-  <link rel="stylesheet" href="style.css?v=5">
+  <link rel="stylesheet" href="style.css?v=7">
 </head>
 <body>
   <header>My Personal Counter</header>
@@ -20,7 +18,7 @@
 
   <button id="fab" aria-label="Añadir contador">+</button>
 
-  <!-- Modal -->
+  <!-- Modal añadir -->
   <div id="modal" class="hidden" role="dialog" aria-modal="true">
     <div class="panel">
       <h2>Nueva sección</h2>
@@ -37,13 +35,22 @@
     </div>
   </div>
 
-  <!-- app con defer para asegurar binding -->
-  <script src="app.js?v=5" defer></script>
+  <!-- Modal info -->
+  <div id="infoModal" class="hidden" role="dialog" aria-modal="true">
+    <div class="panel">
+      <div class="panel-head">
+        <h2 id="infoTitle">Info</h2>
+        <button id="infoClose" class="ghost small" type="button">Cerrar</button>
+      </div>
+      <div id="infoBody" class="info-body"></div>
+    </div>
+  </div>
+
+  <script src="app.js?v=7" defer></script>
   <script>
-    // Registrar SW una vez cargado todo
     window.addEventListener('load', () => {
       if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('./sw.js?v=3');
+        navigator.serviceWorker.register('./sw.js?v=4');
       }
     });
   </script>
