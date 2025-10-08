@@ -1,4 +1,4 @@
-const CACHE = 'mpc-cache-v2'; // <— ¡cambiado!
+const CACHE = 'mpc-cache-v3'; // bump
 const ASSETS = [
   './',
   './index.html',
