@@ -1,125 +1,119 @@
 :root{
   --pad: 8px;
   --radius: 12px;
-
-  /* FAB global */
   --fab-size: 56px;
 
-  /* === Acciones por sección ===
-     - Botón ligeramente más pequeño
-     - Icono un ~20% más grande dentro
-     - Mayor separación vertical para dedo  */
-  --action-btn: clamp(40px, 5.2vw, 56px);     /* ↓ círculo un poco */
-  --action-icon: calc(var(--action-btn) * 0.62); /* ↑ icono ~+20% */
+  /* Acciones */
+  --action-btn: clamp(40px, 5.2vw, 56px);
+  --action-icon: calc(var(--action-btn) * 0.62);
   --action-gap: clamp(10px, 1.6vw, 16px);
 }
+
 *{ box-sizing: border-box; }
-html,body{ margin:0; height:100%; background:#fff; font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
+html,body{ margin:0; height:100%; background:#000; font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
 
-/* ---------- Header ---------- */
-header{
-  position: sticky; top:0; z-index:3;
-  background: rgba(255,255,255,0.9); backdrop-filter: blur(6px);
-  padding: 12px 16px; font-weight: 700; text-align:center; border-bottom: 1px solid #eee;
-}
+/* util */
+.hidden{ display: none !important; }
 
-/* ---------- Lienzo ---------- */
+/* Board (vista general) */
 main#board{
   position: relative;
-  min-height: calc(100vh - 56px);
+  min-height: 100dvh;        /* corrige iOS toolbar */
   padding: var(--pad);
+  background:#000;           /* fuera de tarjetas */
 }
 
-/* ---------- FAB global ---------- */
+/* FAB */
 #fab{
-  position: fixed; right: 16px; bottom: 16px; z-index: 7;
+  position: fixed; right: 16px; bottom: calc(16px + env(safe-area-inset-bottom));
+  z-index: 50;
   width: var(--fab-size); height: var(--fab-size); border-radius: 50%;
-  border:none; font-size: 28px; font-weight:700; background:rgba(250,250,250,.9);
-  box-shadow: 0 4px 16px rgba(0,0,0,.18); backdrop-filter: blur(6px);
+  border:none; font-size: 28px; font-weight:800;
+  background:rgba(250,250,250,.95);
+  box-shadow: 0 4px 16px rgba(0,0,0,.18);
+  backdrop-filter: blur(6px);
   cursor: pointer;
 }
 #fab:active{ transform: scale(.98); }
 
-/* ---------- Modales ---------- */
+/* Modal añadir + modal info */
 #modal, #infoModal{
-  position: fixed; inset:0; background: rgba(0,0,0,.18); display:flex; align-items:center; justify-content:center; z-index:10;
+  position: fixed; inset:0; z-index:60;
+  background: rgba(0,0,0,.18);
+  display:flex; align-items:center; justify-content:center;
+  backdrop-filter: blur(4px);
 }
 #modal.hidden, #infoModal.hidden{ display:none; }
 #modal .panel, #infoModal .panel{
-  background:#fff; padding:16px; width:min(520px, 92vw); border-radius: 14px; box-shadow: 0 10px 30px rgba(0,0,0,.2);
+  background:#fff; padding:16px; width:min(520px, 92vw);
+  border-radius: 14px; box-shadow: 0 10px 30px rgba(0,0,0,.2);
 }
 #modal h2{ margin: 4px 0 12px 0; }
-#modal label{ display:block; margin:10px 0; font-size:.9rem; }
+#modal label{ display:block; margin:10px 0; font-size:.95rem; }
 #modal input[type="text"]{ width:100%; padding:10px; border-radius:10px; border:1px solid #ddd; }
 #modal input[type="color"]{ width:100%; height:40px; border:none; background:transparent; }
-.row{ display:flex; gap:12px; justify-content: flex-end; margin-top: 8px; }
-button{ padding:10px 16px; border-radius:10px; border:1px solid #ddd; background:#0b5fff; color:#fff; font-weight:700; }
+.row{ display:flex; gap:12px; justify-content:flex-end; margin-top:8px; }
+button{ padding:10px 16px; border-radius:10px; border:1px solid #ddd; background:#0b5fff; color:#fff; font-weight:800; }
 button.ghost{ background:#fff; color:#111; }
 button.small{ padding:6px 10px; font-size:.9rem; }
 
-/* Info modal layout */
 .panel-head{ display:flex; align-items:center; justify-content:space-between; gap:12px; }
 .info-body{ display:grid; grid-template-columns: 1fr 1fr; gap:12px; }
 .info-body h3{ margin:.4rem 0; }
 .info-body ul{ margin:.2rem 0 .8rem 1rem; }
 
-/* ---------- Tarjetas/Secciones ---------- */
+/* Tarjetas en overview */
 .tile {
   position: absolute;
-  padding: 8px 10px 38px 10px;
-  border-radius: 12px;
+  border-radius: 14px;
   overflow: hidden;
   color:#000;
   border: 1px solid rgba(0,0,0,.08);
-  display:flex; flex-direction:column; align-items:center;
+  display:flex; align-items:center; justify-content:center;
+  padding: 8px;
+  box-shadow: 0 0 0 2px rgba(0,0,0,.6); /* separador negro como en tus capturas */
 }
-.tile .name { font-size: clamp(.95rem, 1.6vw, 1.1rem); margin-top: 10px; font-weight: 700; text-align:center; }
-.tile .count { font-weight: 900; font-size: clamp(2.2rem, 6vw, 3rem); line-height: 1.1; margin: 6px 0; text-align:center; }
-.tile .sub { font-size: clamp(.9rem, 1.4vw, 1rem); opacity: 0.92; text-align:center; }
-.tile .created {
-  position: absolute; left: 10px; bottom: 8px;
-  font-size: clamp(.78rem, 1.2vw, .9rem); font-weight: 700; opacity: 0.98;
+.tile .center{
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  text-align:center; width:100%; height:100%;
 }
+.tile .center .name { font-size: clamp(1rem, 2.2vw, 1.15rem); font-weight:800; margin-bottom: 2px; }
+.tile .center .count{ font-weight: 1000; font-size: clamp(2.2rem, 6vw, 3rem); line-height:1.1; }
 
-/* --- Barra de acciones superior (VERTICAL) --- */
-.tile .actions {
-  position: absolute;
-  top: var(--action-gap);
-  left: var(--action-gap);
-  right: var(--action-gap);
-  display: flex; justify-content: space-between; align-items: flex-start;
-  pointer-events: none;
+/* Detalle full-screen */
+#detail{
+  position: fixed; inset:0; z-index: 40;        /* por debajo de modales, por encima del board */
+  display:flex; align-items:stretch; justify-content:stretch;
+  background:#fff;
 }
-.tile .left-actions {
-  display:flex; flex-direction: column; gap: var(--action-gap);
-  pointer-events: none;
-}
-.tile .right-actions { pointer-events: none; }
+#detail.hidden{ display:none !important; }
 
-/* Botones */
+/* Acciones en detalle */
+#detail .actions{
+  position:absolute; top: var(--action-gap); left: var(--action-gap); right: var(--action-gap);
+  display:flex; justify-content:space-between; align-items:flex-start; pointer-events:none;
+}
+#detail .left-actions{ display:flex; flex-direction:column; gap: var(--action-gap); pointer-events:none; }
+#detail .right-actions{ pointer-events:none; }
+
 .icon-btn{
-  width: var(--action-btn); height: var(--action-btn);
-  border-radius: 50%;
+  width: var(--action-btn); height: var(--action-btn); border-radius: 50%;
   border: 1px solid rgba(0,0,0,.12);
   background: var(--icon-bg, #fff);
-  box-shadow:
-    0 0 0 2px var(--icon-ring, rgba(255,255,255,.98)),
-    0 2px 10px rgba(0,0,0,.22);
-  display:flex; align-items:center; justify-content:center;
-  cursor: pointer; transition: transform .1s ease;
-  pointer-events: auto;
-  color: var(--icon-color, #333);
-  backdrop-filter: blur(4px);
+  box-shadow: 0 0 0 2px var(--icon-ring, rgba(255,255,255,.98)), 0 2px 10px rgba(0,0,0,.22);
+  display:flex; align-items:center; justify-content:center; cursor:pointer; transition: transform .1s ease;
+  pointer-events:auto; color: var(--icon-color, #333); backdrop-filter: blur(4px);
 }
 .icon-btn:active{ transform: scale(.94); }
-.icon-btn svg{
-  width: var(--action-icon); height: var(--action-icon);
-  display:block; stroke: currentColor; fill: none; stroke-width: 2.2;
+.icon-btn svg{ width: var(--action-icon); height: var(--action-icon); stroke: currentColor; fill:none; stroke-width:2.2; }
+
+/* Zona táctil (detalle) */
+.detail-center{
+  flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center;
+  text-align:center; padding: 24px;
 }
-
-@media (hover: hover) {
-  .icon-btn:hover{ background:#fff; }
-}
-#infoModal { z-index: 20; }
-
-
+.detail-center .name{ font-weight:900; font-size: clamp(1.2rem, 3vw, 1.6rem); margin-bottom: 8px; }
+.detail-center .count{ font-weight: 1000; font-size: clamp(3rem, 10vw, 6rem); line-height:1; margin: 8px 0 10px; }
+.detail-center .sub{ font-size: clamp(1rem, 2.4vw, 1.2rem); opacity:.95; }
+.detail-center .created{ margin-top: 18px; font-weight:800; opacity:.95; }
+.detail-center .hint{ margin-top: 14px; font-size:.95rem; opacity:.75; }
