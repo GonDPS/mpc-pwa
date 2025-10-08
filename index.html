@@ -6,31 +6,28 @@
   <meta name="theme-color" content="#000000">
   <title>My Personal Counter</title>
 
-  <link rel="manifest" href="manifest.json?v=19">
+  <link rel="manifest" href="manifest.json?v=20">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="MPC">
 
   <style>
-    :root{--pad:8px;--radius:12px;--fab-size:56px;--action-btn:48px;--action-icon:30px;--action-gap:12px}
+    :root{--pad:8px;--radius:12px;--fab-size:56px;--fab-gap:12px;--action-btn:48px;--action-icon:30px;--action-gap:12px}
     *{box-sizing:border-box}
     html,body{margin:0;height:100%;background:#000;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
     .hidden{display:none!important}
-
     main#board{position:relative;min-height:100dvh;padding:var(--pad);background:#000}
 
-    #fab{
-      position:fixed;
-      right:16px;
-      bottom:calc(16px + env(safe-area-inset-bottom, 0px));
-      z-index:9999;
-      pointer-events:auto;
-      width:var(--fab-size);height:var(--fab-size);
-      border-radius:50%;border:0;background:#fff;
-      box-shadow:0 4px 16px rgba(0,0,0,.2);
-      font-size:28px;font-weight:800;cursor:pointer
+    /* FABs */
+    #fab, #exportFab{
+      position:fixed; right:16px;
+      width:var(--fab-size); height:var(--fab-size);
+      border-radius:50%; border:0; background:#fff; font-size:28px; font-weight:800;
+      box-shadow:0 4px 16px rgba(0,0,0,.2); cursor:pointer; z-index:9999; pointer-events:auto;
     }
+    #fab{ bottom:calc(16px + env(safe-area-inset-bottom, 0px)); }
+    #exportFab{ bottom:calc(16px + env(safe-area-inset-bottom, 0px) + var(--fab-size) + var(--fab-gap)); font-size:22px; }
 
     .tile{position:absolute;border-radius:14px;overflow:hidden;color:#000;border:1px solid rgba(0,0,0,.08);display:flex;align-items:center;justify-content:center;padding:8px;box-shadow:0 0 0 2px rgba(0,0,0,.6)}
     .tile .center{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;width:100%;height:100%}
@@ -42,10 +39,11 @@
     #detail .actions{
       position:absolute;
       top:calc(var(--action-gap) + env(safe-area-inset-top, 0px));
-      left:var(--action-gap);right:var(--action-gap);
-      display:flex;justify-content:space-between;align-items:flex-start;pointer-events:none
+      left:var(--action-gap); right:var(--action-gap);
+      display:flex; justify-content:space-between; align-items:flex-start; pointer-events:none
     }
     .left-actions{display:flex;flex-direction:column;gap:var(--action-gap);pointer-events:none}
+    .right-actions{display:flex;flex-direction:column;gap:var(--action-gap);pointer-events:none}
     .icon-btn{width:var(--action-btn);height:var(--action-btn);border-radius:50%;border:1px solid rgba(0,0,0,.12);background:#fff;box-shadow:0 0 0 2px rgba(255,255,255,.98),0 2px 10px rgba(0,0,0,.22);display:flex;align-items:center;justify-content:center;pointer-events:auto}
     .icon-btn svg{width:var(--action-icon);height:var(--action-icon);stroke:currentColor;fill:none;stroke-width:2.2}
     .detail-center{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px}
@@ -58,12 +56,13 @@
     #modal .panel,#infoModal .panel{background:#fff;padding:16px;width:min(520px,92vw);border-radius:14px;box-shadow:0 10px 30px rgba(0,0,0,.2)}
   </style>
 
-  <link rel="stylesheet" href="./style.css?v=19">
+  <link rel="stylesheet" href="./style.css?v=20">
 </head>
 <body>
   <main id="board" aria-live="polite"></main>
 
-  <!-- Fallback definitivo -->
+  <!-- Export (CSV) y Añadir -->
+  <button id="exportFab" aria-label="Exportar" title="Exportar CSV">⇩</button>
   <button id="fab" aria-label="Añadir contador" onclick="openModal()">+</button>
 
   <!-- Modal crear -->
@@ -100,6 +99,7 @@
         <button class="icon-btn del"    title="Eliminar"></button>
       </div>
       <div class="right-actions">
+        <button class="icon-btn back"   title="Volver"></button>
         <button class="icon-btn reset"  title="Reset"></button>
       </div>
     </div>
@@ -113,11 +113,11 @@
     </div>
   </div>
 
-  <script src="./app.js?v=19" defer></script>
+  <script src="./app.js?v=20" defer></script>
   <script>
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.getRegistrations().then(rs => rs.forEach(r => r.unregister()));
-      window.addEventListener('load', ()=>navigator.serviceWorker.register('./sw.js?v=19').catch(()=>{}));
+      window.addEventListener('load', ()=>navigator.serviceWorker.register('./sw.js?v=20').catch(()=>{}));
     }
   </script>
 </body>
