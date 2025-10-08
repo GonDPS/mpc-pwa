@@ -6,14 +6,14 @@
   <meta name="theme-color" content="#000000">
   <title>My Personal Counter</title>
 
-  <!-- Manifest / PWA -->
+  <!-- PWA / Manifest -->
   <link rel="manifest" href="manifest.json?v=17">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="MPC">
 
-  <!-- CSS crítico inline (evita “pantalla rota” si falla el externo) -->
+  <!-- CSS crítico inline (evita pantalla “rota” si falla el externo) -->
   <style>
     :root{--pad:8px;--radius:12px;--fab-size:56px;--action-btn:48px;--action-icon:30px;--action-gap:12px}
     *{box-sizing:border-box}
@@ -25,7 +25,6 @@
     .tile .center{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;width:100%;height:100%}
     .tile .center .name{font-weight:800}
     .tile .center .count{font-weight:1000;font-size:clamp(2rem,6vw,3rem)}
-    /* Detalle */
     #detail{position:fixed;inset:0;z-index:40;background:#fff}
     #detail.hidden{display:none!important}
     #detail .actions{position:absolute;top:var(--action-gap);left:var(--action-gap);right:var(--action-gap);display:flex;justify-content:space-between;align-items:flex-start;pointer-events:none}
@@ -37,12 +36,11 @@
     .detail-center .count{font-weight:1000;font-size:clamp(3rem,10vw,6rem);line-height:1;margin:8px 0 10px}
     .detail-center .sub{font-size:clamp(1rem,2.4vw,1.2rem);opacity:.95}
     .detail-center .created{margin-top:18px;font-weight:800;opacity:.95}
-    /* Modales (por si el CSS externo no carga) */
-    #modal,#infoModal{position:fixed;inset:0;z-index:60;background:rgba(0,0,0,.18);display:none;align-items:center;justify-content:center}
+    #modal,#infoModal{position:fixed;inset:0;z-index:100;background:rgba(0,0,0,.18);display:none;align-items:center;justify-content:center}
     #modal .panel,#infoModal .panel{background:#fff;padding:16px;width:min(520px,92vw);border-radius:14px;box-shadow:0 10px 30px rgba(0,0,0,.2)}
   </style>
 
-  <!-- CSS principal (exterior) -->
+  <!-- CSS principal -->
   <link id="main-css" rel="stylesheet" href="./style.css?v=17">
 </head>
 
@@ -56,7 +54,7 @@
     <div class="panel">
       <h2>Nueva sección</h2>
       <label>Nombre <input id="nameInput" type="text" placeholder="p.ej. Cafés"/></label>
-      <label>Color <input id="colorInput" type="color" value="#9fb4ff"/></label>
+      <label>Color  <input id="colorInput" type="color" value="#9fb4ff"/></label>
       <div class="row">
         <button id="cancelBtn" class="ghost" type="button">Cancelar</button>
         <button id="addBtn" type="button">Añadir</button>
@@ -75,24 +73,24 @@
     </div>
   </div>
 
-  <!-- Detalle -->
+  <!-- Detalle full-screen -->
   <div id="detail" class="hidden" role="dialog" aria-modal="true">
     <div id="detailActions" class="actions">
       <div class="left-actions">
-        <button class="icon-btn info" title="Información"></button>
-        <button class="icon-btn undo" title="Deshacer"></button>
+        <button class="icon-btn info"   title="Información"></button>
+        <button class="icon-btn undo"   title="Deshacer"></button>
         <button class="icon-btn rename" title="Renombrar"></button>
-        <button class="icon-btn del" title="Eliminar"></button>
+        <button class="icon-btn del"    title="Eliminar"></button>
       </div>
       <div class="right-actions">
-        <button class="icon-btn reset" title="Reset"></button>
+        <button class="icon-btn reset"  title="Reset"></button>
       </div>
     </div>
     <div id="detailTap" class="detail-center" aria-label="Tocar para sumar">
-      <div class="name" id="detailName">Nombre</div>
-      <div class="count" id="detailCount">0</div>
-      <div class="sub" id="detailMonth">Mes: 0</div>
-      <div class="sub" id="detailYear">Año: 0</div>
+      <div class="name"    id="detailName">Nombre</div>
+      <div class="count"   id="detailCount">0</div>
+      <div class="sub"     id="detailMonth">Mes: 0</div>
+      <div class="sub"     id="detailYear">Año: 0</div>
       <div class="created" id="detailCreated">Creado: —</div>
       <div class="hint">Toca para sumar y volver</div>
     </div>
@@ -101,20 +99,15 @@
   <!-- App -->
   <script src="./app.js?v=17" defer></script>
   <script>
-    // 1) Mata cualquier SW antiguo (evita CSS cacheado)
+    // Desregistra SW antiguos (evita CSS cacheado)
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.getRegistrations().then(regs => regs.forEach(r => r.unregister()));
+      navigator.serviceWorker.getRegistrations().then(rs => rs.forEach(r => r.unregister()));
     }
-    // 2) Registra el nuevo (si quieres mantener SW). Puedes comentar estas líneas si prefieres sin SW.
+    // Registra el nuevo SW
     window.addEventListener('load', () => {
       if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('./sw.js?v=17').catch(()=>{});
       }
-    });
-    // 3) Aviso si el CSS externo no cargó
-    window.addEventListener('load', () => {
-      const ok = [...document.styleSheets].some(s => (s.href||'').includes('style.css?v=17'));
-      if (!ok) console.warn('style.css no cargó; usando sólo CSS crítico inline.');
     });
   </script>
 </body>
