@@ -9,8 +9,9 @@
   <link rel="apple-touch-icon" href="icons/icon-192.png">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <!-- ⚠️ versionado para romper caché -->
-  <link rel="stylesheet" href="style.css?v=4">
+
+  <!-- versionado para romper caché -->
+  <link rel="stylesheet" href="style.css?v=5">
 </head>
 <body>
   <header>My Personal Counter</header>
@@ -30,18 +31,21 @@
         <input id="colorInput" type="color" value="#9fb4ff" />
       </label>
       <div class="row">
-        <button id="cancelBtn" class="ghost">Cancelar</button>
-        <button id="addBtn">Añadir</button>
+        <button id="cancelBtn" class="ghost" type="button">Cancelar</button>
+        <button id="addBtn" type="button">Añadir</button>
       </div>
     </div>
   </div>
 
-  <!-- ⚠️ versionado para romper caché -->
-  <script src="app.js?v=3"></script>
+  <!-- app con defer para asegurar binding -->
+  <script src="app.js?v=5" defer></script>
   <script>
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('./sw.js?v=2');
-    }
+    // Registrar SW una vez cargado todo
+    window.addEventListener('load', () => {
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('./sw.js?v=3');
+      }
+    });
   </script>
 </body>
 </html>
