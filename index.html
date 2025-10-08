@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#000000">
   <title>My Personal Counter</title>
 
-  <link rel="manifest" href="manifest.json?v=20">
+  <link rel="manifest" href="manifest.json?v=21">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -16,15 +16,15 @@
     :root{--pad:8px;--radius:12px;--fab-size:56px;--fab-gap:12px;--action-btn:48px;--action-icon:30px;--action-gap:12px}
     *{box-sizing:border-box}
     html,body{margin:0;height:100%;background:#000;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
-    .hidden{display:none!important}
+    .hidden{display:none!important; pointer-events:none!important;} /* 👈 evita tapar el FAB */
     main#board{position:relative;min-height:100dvh;padding:var(--pad);background:#000}
 
-    /* FABs */
+    /* FABs super arriba y con pointer-events activos */
     #fab, #exportFab{
       position:fixed; right:16px;
       width:var(--fab-size); height:var(--fab-size);
       border-radius:50%; border:0; background:#fff; font-size:28px; font-weight:800;
-      box-shadow:0 4px 16px rgba(0,0,0,.2); cursor:pointer; z-index:9999; pointer-events:auto;
+      box-shadow:0 4px 16px rgba(0,0,0,.2); cursor:pointer; z-index:10000; pointer-events:auto;
     }
     #fab{ bottom:calc(16px + env(safe-area-inset-bottom, 0px)); }
     #exportFab{ bottom:calc(16px + env(safe-area-inset-bottom, 0px) + var(--fab-size) + var(--fab-gap)); font-size:22px; }
@@ -35,7 +35,7 @@
     .tile .center .count{font-weight:1000;font-size:clamp(2rem,6vw,3rem)}
 
     #detail{position:fixed;inset:0;z-index:40;background:#fff}
-    #detail.hidden{display:none!important}
+    #detail.hidden{display:none!important; pointer-events:none!important;}
     #detail .actions{
       position:absolute;
       top:calc(var(--action-gap) + env(safe-area-inset-top, 0px));
@@ -52,17 +52,18 @@
     .detail-center .sub{font-size:clamp(1rem,2.4vw,1.2rem);opacity:.95}
     .detail-center .created{margin-top:18px;font-weight:800;opacity:.95}
 
-    #modal,#infoModal{position:fixed;inset:0;z-index:100;background:rgba(0,0,0,.18);display:none;align-items:center;justify-content:center}
+    #modal,#infoModal{position:fixed;inset:0;z-index:100;background:rgba(0,0,0,.18);display:flex;align-items:center;justify-content:center}
     #modal .panel,#infoModal .panel{background:#fff;padding:16px;width:min(520px,92vw);border-radius:14px;box-shadow:0 10px 30px rgba(0,0,0,.2)}
   </style>
 
-  <link rel="stylesheet" href="./style.css?v=20">
+  <link rel="stylesheet" href="./style.css?v=21">
 </head>
 <body>
   <main id="board" aria-live="polite"></main>
 
   <!-- Export (CSV) y Añadir -->
   <button id="exportFab" aria-label="Exportar" title="Exportar CSV">⇩</button>
+  <!-- 👇 fallback onClick GLOBAL -->
   <button id="fab" aria-label="Añadir contador" onclick="openModal()">+</button>
 
   <!-- Modal crear -->
@@ -113,11 +114,11 @@
     </div>
   </div>
 
-  <script src="./app.js?v=20" defer></script>
+  <script src="./app.js?v=21" defer></script>
   <script>
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.getRegistrations().then(rs => rs.forEach(r => r.unregister()));
-      window.addEventListener('load', ()=>navigator.serviceWorker.register('./sw.js?v=20').catch(()=>{}));
+      window.addEventListener('load', ()=>navigator.serviceWorker.register('./sw.js?v=21').catch(()=>{}));
     }
   </script>
 </body>
