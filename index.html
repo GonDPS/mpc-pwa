@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0b5fff">
+  <title>My Personal Counter</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>My Personal Counter</header>
+
+  <main id="board" aria-live="polite"></main>
+
+  <button id="fab" aria-label="Añadir contador">+</button>
+
+  <!-- Modal -->
+  <div id="modal" class="hidden" role="dialog" aria-modal="true">
+    <div class="panel">
+      <h2>Nueva sección</h2>
+      <label>Nombre
+        <input id="nameInput" type="text" placeholder="p.ej. Cafés" />
+      </label>
+      <label>Color
+        <input id="colorInput" type="color" value="#9fb4ff" />
+      </label>
+      <div class="row">
+        <button id="cancelBtn" class="ghost">Cancelar</button>
+        <button id="addBtn">Añadir</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+  <script>
+    // Service worker
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('./sw.js');
+    }
+  </script>
+</body>
+</html>
