@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#000000">
   <title>My Personal Counter</title>
 
-  <link rel="manifest" href="manifest.json?v=21">
+  <link rel="manifest" href="manifest.json?v=22">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -16,10 +16,9 @@
     :root{--pad:8px;--radius:12px;--fab-size:56px;--fab-gap:12px;--action-btn:48px;--action-icon:30px;--action-gap:12px}
     *{box-sizing:border-box}
     html,body{margin:0;height:100%;background:#000;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
-    .hidden{display:none!important; pointer-events:none!important;} /* 👈 evita tapar el FAB */
+    .hidden{display:none!important; pointer-events:none!important;}
     main#board{position:relative;min-height:100dvh;padding:var(--pad);background:#000}
 
-    /* FABs super arriba y con pointer-events activos */
     #fab, #exportFab{
       position:fixed; right:16px;
       width:var(--fab-size); height:var(--fab-size);
@@ -56,14 +55,12 @@
     #modal .panel,#infoModal .panel{background:#fff;padding:16px;width:min(520px,92vw);border-radius:14px;box-shadow:0 10px 30px rgba(0,0,0,.2)}
   </style>
 
-  <link rel="stylesheet" href="./style.css?v=21">
+  <link rel="stylesheet" href="./style.css?v=22">
 </head>
 <body>
   <main id="board" aria-live="polite"></main>
 
-  <!-- Export (CSV) y Añadir -->
   <button id="exportFab" aria-label="Exportar" title="Exportar CSV">⇩</button>
-  <!-- 👇 fallback onClick GLOBAL -->
   <button id="fab" aria-label="Añadir contador" onclick="openModal()">+</button>
 
   <!-- Modal crear -->
@@ -109,16 +106,18 @@
       <div class="count"   id="detailCount">0</div>
       <div class="sub"     id="detailMonth">Mes: 0</div>
       <div class="sub"     id="detailYear">Año: 0</div>
+      <!-- 👇 nuevo -->
+      <div class="sub"     id="detailToday">Hoy: 0</div>
       <div class="created" id="detailCreated">Creado: —</div>
       <div class="hint">Toca para sumar y volver</div>
     </div>
   </div>
 
-  <script src="./app.js?v=21" defer></script>
+  <script src="./app.js?v=22" defer></script>
   <script>
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.getRegistrations().then(rs => rs.forEach(r => r.unregister()));
-      window.addEventListener('load', ()=>navigator.serviceWorker.register('./sw.js?v=21').catch(()=>{}));
+      window.addEventListener('load', ()=>navigator.serviceWorker.register('./sw.js?v=22').catch(()=>{}));
     }
   </script>
 </body>
