@@ -1,5 +1,5 @@
-// My Personal Counter – V21
-// Blindaje extra del FAB y cierre forzado de overlays al volver a overview.
+// My Personal Counter – V22
+// Novedad: muestra "Hoy: X" en el detalle y migración no destructiva a log[].
 
 const KEY = 'mpc.items.v5';
 let items = [];
@@ -8,23 +8,24 @@ let current = null;
 
 document.addEventListener('DOMContentLoaded', () => {
   items = load();
+  migrate();           // 👈 asegura log[] sin tocar tus conteos
   bindUI();
   layout();
-  // expone openModal para el onclick del HTML aunque el scope se aísle
   window.openModal = openModal;
 });
 
-/* ---- storage ---- */
+/* ---------- storage ---------- */
 function load(){ try { return JSON.parse(localStorage.getItem(KEY) || '[]'); } catch { return []; } }
 function save(){ localStorage.setItem(KEY, JSON.stringify(items)); }
 
-/* ---- dates ---- */
+/* ---------- dates ---------- */
 function nowParts(){ const d=new Date(); return { y:d.getFullYear(), m:d.getMonth(), d }; }
 const ymKey = (y,m)=> `${y}-${String(m+1).padStart(2,'0')}`;
 const monthName = (y,m)=> new Intl.DateTimeFormat('es-ES',{month:'long'}).format(new Date(y,m,1));
 const cap = s => s ? s[0].toUpperCase()+s.slice(1) : s;
+const isoDay = (d)=> d.toISOString().slice(0,10); // YYYY-MM-DD
 
-/* ---- colors ---- */
+/* ---------- colors ---------- */
 function hexToRgb(hex){ let s=hex.trim(); if(s.startsWith('#')) s=s.slice(1); if(s.length===3) s=s.split('').map(x=>x+x).join(''); const n=parseInt(s,16); return {r:(n>>16)&255,g:(n>>8)&255,b:n&255}; }
 function rgbToHex({r,g,b}){const h=x=>x.toString(16).padStart(2,'0');return`#${h(r)}${h(g)}${h(b)}`;}
 function rgbToHsl({r,g,b}){r/=255;g/=255;b/=255;const M=Math.max(r,g,b),m=Math.min(r,g,b);let h,s,l=(M+m)/2;if(M===m){h=s=0;}else{const d=M-m;s=l>0.5?d/(2-M-m):d/(M+m);switch(M){case r:h=(g-b)/d+(g<b?6:0);break;case g:h=(b-r)/d+2;break;case b:h=(r-g)/d+4;break;}h/=6;}return{h,s,l};}
@@ -49,7 +50,7 @@ function nextColor(){
   return rgbToHex(hslToRgb({h,s:0.62,l:0.70}));
 }
 
-/* ---- history ---- */
+/* ---------- history ---------- */
 function ensurePeriods(it){
   const {y,m}=nowParts();
   if(!it.monthStat||it.monthStat.year!==y||it.monthStat.month!==m) it.monthStat={year:y,month:m,count:0};
@@ -62,11 +63,21 @@ function ensurePeriods(it){
 function snapshot(it){
   return JSON.parse(JSON.stringify({
     count:it.count,monthStat:it.monthStat,yearStat:it.yearStat,
-    historyMonthly:it.historyMonthly,historyYearly:it.historyYearly
+    historyMonthly:it.historyMonthly,historyYearly:it.historyYearly,
+    log:it.log||[]
   }));
 }
 
-/* ---- icons ---- */
+/* ---------- migration ---------- */
+function migrate(){
+  let changed=false;
+  for (const it of items){
+    if (!Array.isArray(it.log)){ it.log=[]; changed=true; }
+  }
+  if (changed) save();
+}
+
+/* ---------- icons ---------- */
 const svg = d => `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="${d}"/></svg>`;
 const ICON = {
   info:  "M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm0 5a1.25 1.25 0 1 1 0 2.5 1.25 1.25 0 0 1 0-2.5zm-1.25 4h2.5v7h-2.5v-7z",
@@ -74,14 +85,13 @@ const ICON = {
   reset: "M12 5V2l5 5-5 5V9a5 5 0 1 0 5 5h2A7 7 0 1 1 12 5z",
   rename:"M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z M20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z",
   delete:"M6 7h12M10 7v10m4-10v10M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2M5 7h14l-1 13a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 7z",
-  back:  "M15 4l-8 8 8 8M7 12h16",
-  dl:    "M12 3v10m0 0l-4-4m4 4l4-4M5 19h14"
+  back:  "M15 4l-8 8 8 8M7 12h16"
 };
 
-/* ---- DOM ---- */
+/* ---------- DOM refs ---------- */
 let board,fab,exportFab,modal,nameInput,colorInput,addBtn,cancelBtn;
 let infoModal,infoTitle,infoBody,infoClose;
-let detail,detailActions,detailTap,detailName,detailCount,detailMonth,detailYear,detailCreated;
+let detail,detailActions,detailTap,detailName,detailCount,detailMonth,detailYear,detailToday,detailCreated;
 
 function bindUI(){
   board=document.getElementById('board');
@@ -105,12 +115,11 @@ function bindUI(){
   detailCount=document.getElementById('detailCount');
   detailMonth=document.getElementById('detailMonth');
   detailYear=document.getElementById('detailYear');
+  detailToday=document.getElementById('detailToday'); // 👈 nuevo
   detailCreated=document.getElementById('detailCreated');
 
-  // FAB hipergarantizado: pointer/click/touch + delegación global
   const onFab=(e)=>{ if(e){e.preventDefault();e.stopPropagation();} openModal(); };
   ['pointerdown','click','touchstart','touchend'].forEach(t=>fab.addEventListener(t,onFab,{passive:false}));
-  document.addEventListener('click',(e)=>{const t=e.target; if(t && (t.id==='fab'||t.closest?.('#fab'))) onFab(e);},{capture:true});
 
   const onExport=(e)=>{ if(e){e.preventDefault();e.stopPropagation();} exportCSV(); };
   ['pointerdown','click','touchstart','touchend'].forEach(t=>exportFab.addEventListener(t,onExport,{passive:false}));
@@ -123,7 +132,7 @@ function bindUI(){
   window.addEventListener('orientationchange', ()=> setTimeout(layout,120), {passive:true});
 }
 
-/* ---- create ---- */
+/* ---------- create ---------- */
 function openModal(){ try{ colorInput.value=nextColor(); }catch{} modal.classList.remove('hidden'); setTimeout(()=>nameInput?.focus(),50); }
 function closeModal(){ modal.classList.add('hidden'); nameInput.value=''; }
 
@@ -144,13 +153,10 @@ function onAdd(){
   save(); closeModal(); layout();
 }
 
-/* ---- layout (mismo de V20) ---- */
+/* ---------- grid (igual que V21) ---------- */
 function layout(){ (mode==='overview') ? renderOverview() : renderDetail(); }
-
 function renderOverview(){
-  // cierra todo por si algo quedó abierto y pudiera tapar el FAB
   modal?.classList.add('hidden'); infoModal?.classList.add('hidden'); detail?.classList.add('hidden');
-
   fab.style.display='block'; exportFab.style.display='block';
   board.innerHTML='';
 
@@ -159,13 +165,8 @@ function renderOverview(){
   if(arr.length===0) return;
 
   let n=arr.length, cols;
-  if (W < 520) {
-    if (n <= 2) cols = 1;
-    else cols = 2;   // 3 o más
-  } else {
-    cols = Math.min(3, Math.max(1, Math.floor(W / 360)));
-    if (cols < 2 && n >= 3) cols = 2;
-  }
+  if (W < 520) { cols = (n<=2)?1:2; }
+  else { cols = Math.min(3, Math.max(1, Math.floor(W / 360))); if (cols < 2 && n >= 3) cols = 2; }
 
   let rows = Math.ceil(n / cols);
   let cellW = (W - pad*(cols-1)) / cols;
@@ -204,8 +205,25 @@ function renderOverview(){
   });
 }
 
-/* ---- detail ---- */
+/* ---------- detail ---------- */
 function openDetail(it){ current=it; mode='detail'; renderDetail(); }
+
+function countToday(it){
+  if (!Array.isArray(it.log) || it.log.length===0) return 0;
+  const today = isoDay(new Date());
+  // empezamos desde el final por si la lista crece
+  let c=0;
+  for (let i=it.log.length-1;i>=0;i--){
+    const ts = it.log[i].ts;
+    if (!ts) continue;
+    if (ts.slice(0,10)===today) c++;
+    else break; // en cuanto salimos de hoy, paramos (logs suelen ir en orden)
+  }
+  // si hay entradas antiguas de hoy sin orden, hacemos un recuento completo seguro
+  if (c===0) c = it.log.filter(e => (e.ts||'').slice(0,10)===today).length;
+  return c;
+}
+
 function renderDetail(){
   if(!current){ mode='overview'; return renderOverview(); }
   fab.style.display='none'; exportFab.style.display='none';
@@ -218,14 +236,14 @@ function renderDetail(){
   detailActions.style.setProperty('--icon-bg','rgba(255,255,255,.98)');
   detailActions.style.setProperty('--icon-ring','rgba(255,255,255,.98)');
 
-  const svgEl = sel => { const b=detailActions.querySelector(sel); return b; };
+  const svgBtn = sel => detailActions.querySelector(sel);
   const setSvg = (btn, path) => btn && (btn.innerHTML = svg(path));
-  setSvg(svgEl('.info'),   ICON.info);
-  setSvg(svgEl('.undo'),   ICON.undo);
-  setSvg(svgEl('.rename'), ICON.rename);
-  setSvg(svgEl('.del'),    ICON.delete);
-  setSvg(svgEl('.reset'),  ICON.reset);
-  setSvg(svgEl('.back'),   ICON.back);
+  setSvg(svgBtn('.info'),   ICON.info);
+  setSvg(svgBtn('.undo'),   ICON.undo);
+  setSvg(svgBtn('.rename'), ICON.rename);
+  setSvg(svgBtn('.del'),    ICON.delete);
+  setSvg(svgBtn('.reset'),  ICON.reset);
+  setSvg(svgBtn('.back'),   ICON.back);
 
   const mes=cap(monthName(it.monthStat.year,it.monthStat.month));
   const createdStr=new Date(it.createdAt||Date.now()).toLocaleDateString('es-ES',{day:'numeric',month:'short',year:'numeric'});
@@ -233,14 +251,15 @@ function renderDetail(){
   detailCount.textContent=it.count;
   detailMonth.textContent=`${mes}: ${it.monthStat.count}`;
   detailYear.textContent =`${it.yearStat.year}: ${it.yearStat.count}`;
+  detailToday.textContent=`Hoy: ${countToday(it)}`; // 👈 nuevo
   detailCreated.textContent=`Creado: ${createdStr}`;
 
-  svgEl('.info').onclick =(e)=>{e.stopPropagation();openInfo(it);};
-  svgEl('.reset').onclick=(e)=>{e.stopPropagation();doReset(it);};
-  svgEl('.undo').onclick =(e)=>{e.stopPropagation();doUndo(it);};
-  svgEl('.rename').onclick=(e)=>{e.stopPropagation();doRename(it);};
-  svgEl('.del').onclick  =(e)=>{e.stopPropagation();doDelete(it);};
-  svgEl('.back').onclick =(e)=>{e.stopPropagation();mode='overview';renderOverview();};
+  svgBtn('.info').onclick =(e)=>{e.stopPropagation();openInfo(it);};
+  svgBtn('.reset').onclick=(e)=>{e.stopPropagation();doReset(it);};
+  svgBtn('.undo').onclick =(e)=>{e.stopPropagation();doUndo(it);};
+  svgBtn('.rename').onclick=(e)=>{e.stopPropagation();doRename(it);};
+  svgBtn('.del').onclick  =(e)=>{e.stopPropagation();doDelete(it);};
+  svgBtn('.back').onclick =(e)=>{e.stopPropagation();mode='overview';renderOverview();};
 
   detailTap.onclick=()=>{
     doIncrement(it);
@@ -249,7 +268,7 @@ function renderDetail(){
   };
 }
 
-/* ---- actions ---- */
+/* ---------- actions ---------- */
 function doIncrement(it){
   ensurePeriods(it);
   it.lastChange=snapshot(it);
@@ -257,13 +276,17 @@ function doIncrement(it){
   it.count+=1; it.monthStat.count+=1; it.yearStat.count+=1;
   it.historyMonthly[k]=(it.historyMonthly[k]||0)+1;
   it.historyYearly[String(y)]=(it.historyYearly[String(y)]||0)+1;
-  it.log ||= []; it.log.push({ ts: new Date().toISOString(), countAfter: it.count });
+
+  it.log ||= [];
+  it.log.push({ ts: new Date().toISOString(), countAfter: it.count });
+
   save();
 }
 function doReset(it){
   if(!confirm(`Resetear "${it.name}"?`)) return;
   ensurePeriods(it); it.lastChange=snapshot(it);
   const {y,m}=nowParts(); it.count=0; it.monthStat={year:y,month:m,count:0}; it.yearStat={year:y,count:0};
+  // Nota: mantenemos log como histórico para export (si quisieras borrarlo, aquí sería it.log=[])
   save(); renderDetail();
 }
 function doUndo(it){
@@ -271,6 +294,7 @@ function doUndo(it){
   const s=it.lastChange;
   it.count=s.count; it.monthStat=s.monthStat; it.yearStat=s.yearStat;
   it.historyMonthly=s.historyMonthly; it.historyYearly=s.historyYearly;
+  it.log=s.log||it.log; // restauramos log al estado previo a la suma si existía snap
   it.lastChange=null; save();
   mode='overview'; renderOverview();
 }
@@ -283,8 +307,12 @@ function doDelete(it){
   items=items.filter(x=>x.id!==it.id); save(); mode='overview'; renderOverview();
 }
 
-/* ---- info ---- */
+/* ---------- info / export reutilizados ---------- */
 function openInfo(it){
+  const infoModal=document.getElementById('infoModal');
+  const infoTitle=document.getElementById('infoTitle');
+  const infoBody=document.getElementById('infoBody');
+
   infoTitle.textContent = it.name;
   const months=Object.entries(it.historyMonthly||{}).map(([k,v])=>({k,y:+k.split('-')[0],m:+k.split('-')[1]-1,v})).sort((a,b)=> (a.y!==b.y?b.y-a.y:b.m-a.m));
   const years=Object.entries(it.historyYearly||{}).map(([k,v])=>({y:+k,v})).sort((a,b)=> b.y-a.y);
@@ -294,7 +322,6 @@ function openInfo(it){
   infoModal.classList.remove('hidden');
 }
 
-/* ---- export ---- */
 function exportCSV(){
   const rows = [];
   rows.push(['id','name','timestamp','year','month','day','hour','minute','countAfter']);
