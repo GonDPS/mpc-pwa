@@ -1,5 +1,5 @@
-// My Personal Counter – V22
-// Novedad: muestra "Hoy: X" en el detalle y migración no destructiva a log[].
+// My Personal Counter – V23
+// Nuevo: Semana (ISO, lunes a domingo) en detalle + tipografías más grandes + flecha ▲/▼ en overview.
 
 const KEY = 'mpc.items.v5';
 let items = [];
@@ -8,7 +8,7 @@ let current = null;
 
 document.addEventListener('DOMContentLoaded', () => {
   items = load();
-  migrate();           // 👈 asegura log[] sin tocar tus conteos
+  migrate();
   bindUI();
   layout();
   window.openModal = openModal;
@@ -18,12 +18,24 @@ document.addEventListener('DOMContentLoaded', () => {
 function load(){ try { return JSON.parse(localStorage.getItem(KEY) || '[]'); } catch { return []; } }
 function save(){ localStorage.setItem(KEY, JSON.stringify(items)); }
 
-/* ---------- dates ---------- */
+/* ---------- date helpers ---------- */
 function nowParts(){ const d=new Date(); return { y:d.getFullYear(), m:d.getMonth(), d }; }
 const ymKey = (y,m)=> `${y}-${String(m+1).padStart(2,'0')}`;
 const monthName = (y,m)=> new Intl.DateTimeFormat('es-ES',{month:'long'}).format(new Date(y,m,1));
 const cap = s => s ? s[0].toUpperCase()+s.slice(1) : s;
 const isoDay = (d)=> d.toISOString().slice(0,10); // YYYY-MM-DD
+
+function startOfIsoWeek(d){
+  const x = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+  // lunes = 1 ... domingo = 7
+  const day = x.getUTCDay() === 0 ? 7 : x.getUTCDay();
+  x.setUTCDate(x.getUTCDate() - (day - 1));
+  x.setUTCHours(0,0,0,0);
+  return x;
+}
+function isSameIsoDay(ts, dayStr){
+  return (ts || '').slice(0,10) === dayStr;
+}
 
 /* ---------- colors ---------- */
 function hexToRgb(hex){ let s=hex.trim(); if(s.startsWith('#')) s=s.slice(1); if(s.length===3) s=s.split('').map(x=>x+x).join(''); const n=parseInt(s,16); return {r:(n>>16)&255,g:(n>>8)&255,b:n&255}; }
@@ -69,12 +81,29 @@ function snapshot(it){
 }
 
 /* ---------- migration ---------- */
-function migrate(){
-  let changed=false;
-  for (const it of items){
-    if (!Array.isArray(it.log)){ it.log=[]; changed=true; }
+function migrate(){ let changed=false; for (const it of items){ if (!Array.isArray(it.log)) { it.log=[]; changed=true; } } if (changed) save(); }
+
+/* ---------- metrics from log ---------- */
+function countOnDay(it, dayStr){
+  if (!Array.isArray(it.log)) return 0;
+  let c=0; for (const e of it.log) if (isSameIsoDay(e.ts, dayStr)) c++;
+  return c;
+}
+function countToday(it){ return countOnDay(it, isoDay(new Date())); }
+function countYesterday(it){
+  const d=new Date(); d.setDate(d.getDate()-1);
+  return countOnDay(it, isoDay(d));
+}
+function countWeek(it){
+  if (!Array.isArray(it.log)) return 0;
+  const end = new Date(); end.setHours(23,59,59,999);
+  const start = startOfIsoWeek(new Date());
+  let c=0;
+  for (const e of it.log){
+    const t = new Date(e.ts);
+    if (t >= start && t <= end) c++;
   }
-  if (changed) save();
+  return c;
 }
 
 /* ---------- icons ---------- */
@@ -88,10 +117,10 @@ const ICON = {
   back:  "M15 4l-8 8 8 8M7 12h16"
 };
 
-/* ---------- DOM refs ---------- */
+/* ---------- DOM ---------- */
 let board,fab,exportFab,modal,nameInput,colorInput,addBtn,cancelBtn;
 let infoModal,infoTitle,infoBody,infoClose;
-let detail,detailActions,detailTap,detailName,detailCount,detailMonth,detailYear,detailToday,detailCreated;
+let detail,detailActions,detailTap,detailName,detailCount,detailMonth,detailYear,detailWeek,detailToday,detailCreated;
 
 function bindUI(){
   board=document.getElementById('board');
@@ -115,7 +144,8 @@ function bindUI(){
   detailCount=document.getElementById('detailCount');
   detailMonth=document.getElementById('detailMonth');
   detailYear=document.getElementById('detailYear');
-  detailToday=document.getElementById('detailToday'); // 👈 nuevo
+  detailWeek=document.getElementById('detailWeek');
+  detailToday=document.getElementById('detailToday');
   detailCreated=document.getElementById('detailCreated');
 
   const onFab=(e)=>{ if(e){e.preventDefault();e.stopPropagation();} openModal(); };
@@ -153,8 +183,9 @@ function onAdd(){
   save(); closeModal(); layout();
 }
 
-/* ---------- grid (igual que V21) ---------- */
+/* ---------- layout ---------- */
 function layout(){ (mode==='overview') ? renderOverview() : renderDetail(); }
+
 function renderOverview(){
   modal?.classList.add('hidden'); infoModal?.classList.add('hidden'); detail?.classList.add('hidden');
   fab.style.display='block'; exportFab.style.display='block';
@@ -199,7 +230,27 @@ function renderOverview(){
     }
 
     el.style.background=it.color;
-    el.innerHTML=`<div class="center"><div class="name">${it.name}</div><div class="count">${it.count}</div></div>`;
+    el.innerHTML=`
+      <div class="center">
+        <div class="name">${it.name}</div>
+        <div class="count">${it.count}</div>
+      </div>
+      <div class="trend"></div>
+    `;
+
+    // trend ▲/▼ (hoy vs ayer)
+    const tEl = el.querySelector('.trend');
+    const today = countToday(it);
+    const yest  = countYesterday(it);
+    let symbol = '';
+    if (today > yest) symbol = '▲';
+    else if (today < yest) symbol = '▼';
+    tEl.textContent = symbol;
+
+    // buen contraste con el color de la tarjeta
+    const color = ensureContrast('#111', it.color, 4.2);
+    tEl.style.color = color;
+
     el.addEventListener('click',()=>openDetail(it),{passive:true});
     board.appendChild(el);
   });
@@ -207,22 +258,6 @@ function renderOverview(){
 
 /* ---------- detail ---------- */
 function openDetail(it){ current=it; mode='detail'; renderDetail(); }
-
-function countToday(it){
-  if (!Array.isArray(it.log) || it.log.length===0) return 0;
-  const today = isoDay(new Date());
-  // empezamos desde el final por si la lista crece
-  let c=0;
-  for (let i=it.log.length-1;i>=0;i--){
-    const ts = it.log[i].ts;
-    if (!ts) continue;
-    if (ts.slice(0,10)===today) c++;
-    else break; // en cuanto salimos de hoy, paramos (logs suelen ir en orden)
-  }
-  // si hay entradas antiguas de hoy sin orden, hacemos un recuento completo seguro
-  if (c===0) c = it.log.filter(e => (e.ts||'').slice(0,10)===today).length;
-  return c;
-}
 
 function renderDetail(){
   if(!current){ mode='overview'; return renderOverview(); }
@@ -236,14 +271,13 @@ function renderDetail(){
   detailActions.style.setProperty('--icon-bg','rgba(255,255,255,.98)');
   detailActions.style.setProperty('--icon-ring','rgba(255,255,255,.98)');
 
-  const svgBtn = sel => detailActions.querySelector(sel);
-  const setSvg = (btn, path) => btn && (btn.innerHTML = svg(path));
-  setSvg(svgBtn('.info'),   ICON.info);
-  setSvg(svgBtn('.undo'),   ICON.undo);
-  setSvg(svgBtn('.rename'), ICON.rename);
-  setSvg(svgBtn('.del'),    ICON.delete);
-  setSvg(svgBtn('.reset'),  ICON.reset);
-  setSvg(svgBtn('.back'),   ICON.back);
+  const q=s=>detailActions.querySelector(s);
+  q('.info').innerHTML   = svg(ICON.info);
+  q('.undo').innerHTML   = svg(ICON.undo);
+  q('.rename').innerHTML = svg(ICON.rename);
+  q('.del').innerHTML    = svg(ICON.delete);
+  q('.reset').innerHTML  = svg(ICON.reset);
+  q('.back').innerHTML   = svg(ICON.back);
 
   const mes=cap(monthName(it.monthStat.year,it.monthStat.month));
   const createdStr=new Date(it.createdAt||Date.now()).toLocaleDateString('es-ES',{day:'numeric',month:'short',year:'numeric'});
@@ -251,15 +285,17 @@ function renderDetail(){
   detailCount.textContent=it.count;
   detailMonth.textContent=`${mes}: ${it.monthStat.count}`;
   detailYear.textContent =`${it.yearStat.year}: ${it.yearStat.count}`;
-  detailToday.textContent=`Hoy: ${countToday(it)}`; // 👈 nuevo
+  detailWeek.textContent =`Semana: ${countWeek(it)}`;   // NUEVO
+  detailToday.textContent=`Hoy: ${countToday(it)}`;
+
   detailCreated.textContent=`Creado: ${createdStr}`;
 
-  svgBtn('.info').onclick =(e)=>{e.stopPropagation();openInfo(it);};
-  svgBtn('.reset').onclick=(e)=>{e.stopPropagation();doReset(it);};
-  svgBtn('.undo').onclick =(e)=>{e.stopPropagation();doUndo(it);};
-  svgBtn('.rename').onclick=(e)=>{e.stopPropagation();doRename(it);};
-  svgBtn('.del').onclick  =(e)=>{e.stopPropagation();doDelete(it);};
-  svgBtn('.back').onclick =(e)=>{e.stopPropagation();mode='overview';renderOverview();};
+  q('.info').onclick =(e)=>{e.stopPropagation();openInfo(it);};
+  q('.reset').onclick=(e)=>{e.stopPropagation();doReset(it);};
+  q('.undo').onclick =(e)=>{e.stopPropagation();doUndo(it);};
+  q('.rename').onclick=(e)=>{e.stopPropagation();doRename(it);};
+  q('.del').onclick  =(e)=>{e.stopPropagation();doDelete(it);};
+  q('.back').onclick =(e)=>{e.stopPropagation();mode='overview';renderOverview();};
 
   detailTap.onclick=()=>{
     doIncrement(it);
@@ -279,14 +315,12 @@ function doIncrement(it){
 
   it.log ||= [];
   it.log.push({ ts: new Date().toISOString(), countAfter: it.count });
-
   save();
 }
 function doReset(it){
   if(!confirm(`Resetear "${it.name}"?`)) return;
   ensurePeriods(it); it.lastChange=snapshot(it);
   const {y,m}=nowParts(); it.count=0; it.monthStat={year:y,month:m,count:0}; it.yearStat={year:y,count:0};
-  // Nota: mantenemos log como histórico para export (si quisieras borrarlo, aquí sería it.log=[])
   save(); renderDetail();
 }
 function doUndo(it){
@@ -294,7 +328,7 @@ function doUndo(it){
   const s=it.lastChange;
   it.count=s.count; it.monthStat=s.monthStat; it.yearStat=s.yearStat;
   it.historyMonthly=s.historyMonthly; it.historyYearly=s.historyYearly;
-  it.log=s.log||it.log; // restauramos log al estado previo a la suma si existía snap
+  it.log=s.log||it.log;
   it.lastChange=null; save();
   mode='overview'; renderOverview();
 }
@@ -307,7 +341,7 @@ function doDelete(it){
   items=items.filter(x=>x.id!==it.id); save(); mode='overview'; renderOverview();
 }
 
-/* ---------- info / export reutilizados ---------- */
+/* ---------- info / export (reutilizado) ---------- */
 function openInfo(it){
   const infoModal=document.getElementById('infoModal');
   const infoTitle=document.getElementById('infoTitle');
@@ -330,7 +364,7 @@ function exportCSV(){
       const d = new Date(entry.ts);
       rows.push([
         it.id,
-        it.name.replaceAll('"','""'),
+        it.name?.replaceAll('"','""') ?? '',
         entry.ts,
         d.getFullYear(),
         d.getMonth()+1,
